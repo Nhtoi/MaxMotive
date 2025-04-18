@@ -32,8 +32,8 @@
                 <h2>{{ $product->name }}</h2>
                 <p>Price: ${{ number_format($product->price, 2) }}</p>
                 <p>Description: {{ $product->description }}</p>
-                <p>Net Weight: {{ $product->weight ?? 'N/A' }}</p> <!-- Display the weight -->
-                <p>Flavor: {{ $product->flavor ?? 'N/A' }}</p> <!-- Display the flavor -->
+                <p>Net Weight: {{ $product->weight ?? 'N/A' }}</p> 
+                <p>Flavor: {{ $product->flavor ?? 'N/A' }}</p> 
 
                 <form method="POST" action="{{ route('cart.add', $product->id) }}">
                     @csrf

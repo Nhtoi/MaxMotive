@@ -5,13 +5,16 @@ use App\Http\Controllers\AdminProductController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\HomeController;
+
+Route::get('/home', [HomeController::class, 'index'])->name('home');
 
 // Landing page
 Route::get('/home', function () {
     return view('home');
 })->name('home');
 
-// Admin routes with controller logic
+
 Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/products', [AdminProductController::class, 'index'])->name('products');
     Route::get('/products/create', [AdminProductController::class, 'create'])->name('products.create');
@@ -24,14 +27,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/upload', [AdminProductController::class, 'uploadForm'])->name('upload');
     Route::post('/upload', [AdminProductController::class, 'uploadStore'])->name('upload.store');
 
-    // ⭐ Public Product Routes (add these below admin group)
 
 });
 Route::get('/products/search', [ProductController::class, 'search'])->name('products.search');
 Route::get('/products', [ProductController::class, 'index'])->name('products.index');
 Route::get('/products/{id}', [ProductController::class, 'show'])->name('products.show');
 
-// Update the route definition
 Route::post('/cart/{productId}/add', [CartController::class, 'addToCart'])->name('cart.add');
 Route::delete('/cart/{itemId}/remove', [CartController::class, 'removeFromCart'])->name('cart.remove');
 Route::put('/cart/update/{id}', [CartController::class, 'update'])->name('cart.update');

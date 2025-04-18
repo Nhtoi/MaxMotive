@@ -10,7 +10,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@700&display=swap" rel="stylesheet"> 
 </head>
 <body>
-    <!-- Navbar -->
     <nav>
         <div id="logo">
             <img id="logo-image" src="{{ Vite::asset('resources/Assets/Logo.png') }}" alt="MaxMotive Logo">
@@ -48,7 +47,6 @@
         </div>
     </main>
 
-    <!-- Footer -->
     <footer>
         <div id="content">
             <div id="info">

@@ -25,7 +25,6 @@ class AdminProductController extends Controller
 
     public function create()
     {
-        // Pass empty array for new product
         return view('admin-products-create', ['product' => null]);
     }
 
@@ -38,8 +37,8 @@ class AdminProductController extends Controller
             'imageurl' => 'nullable',
             'category' => 'nullable',
             'stock_quantity' => 'required|integer',
-            'weight' => 'nullable|numeric',  // Add weight validation
-            'flavor' => 'nullable|string',   // Add flavor validation
+            'weight' => 'nullable|numeric',  
+            'flavor' => 'nullable|string',  
         ]);
 
         DB::insert("
@@ -52,8 +51,8 @@ class AdminProductController extends Controller
             $validated['imageurl'] ?? null,
             $validated['category'] ?? null,
             $validated['stock_quantity'],
-            $validated['weight'] ?? null,   // Insert weight if provided
-            $validated['flavor'] ?? null,   // Insert flavor if provided
+            $validated['weight'] ?? null,  
+            $validated['flavor'] ?? null,   
         ]);
 
         return redirect()->route('admin.products')->with('success', 'Product added.');
@@ -79,8 +78,8 @@ class AdminProductController extends Controller
             'imageurl' => 'nullable',
             'category' => 'nullable',
             'stock_quantity' => 'required|integer',
-            'weight' => 'nullable|numeric',  // Add weight validation
-            'flavor' => 'nullable|string',   // Add flavor validation
+            'weight' => 'nullable|numeric', 
+            'flavor' => 'nullable|string',  
         ]);
 
         DB::update("
@@ -94,8 +93,8 @@ class AdminProductController extends Controller
             $validated['imageurl'] ?? null,
             $validated['category'] ?? null,
             $validated['stock_quantity'],
-            $validated['weight'] ?? null,   // Update weight if provided
-            $validated['flavor'] ?? null,   // Update flavor if provided
+            $validated['weight'] ?? null,   
+            $validated['flavor'] ?? null,  
             $id,
         ]);
 
@@ -139,7 +138,6 @@ class AdminProductController extends Controller
     
         $inserted = 0;
         foreach ($products as $product) {
-            // Basic validation per product
             if (
                 isset($product['id'], $product['name'], $product['price'], $product['description'], 
                       $product['imageurl'], $product['category'], $product['stock_quantity'])

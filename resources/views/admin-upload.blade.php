@@ -8,7 +8,6 @@
 </head>
 <body>
     <nav>
-        <!-- Admin Navigation -->
         <a href="{{ route('admin.upload') }}">Bulk Upload</a>
         <a href="{{ route('admin.products') }}">Product Listing</a>
         <a href="{{ route('home') }}">Home</a>

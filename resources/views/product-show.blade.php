@@ -22,25 +22,31 @@
     </nav>
 
     <main>
-        <div class="product-details">
-            <div class="product-image">
-                @if($product->imageurl)
-                    <img class="image-details" src="{{ $product->imageurl }}" alt="{{ $product->name }}">
-                @endif
-            </div>
-            <div class="product-info">
-                <h2>{{ $product->name }}</h2>
-                <p>Price: ${{ number_format($product->price, 2) }}</p>
-                <p>Description: {{ $product->description }}</p>
-                <p>Net Weight: {{ $product->weight ?? 'N/A' }}</p> 
-                <p>Flavor: {{ $product->flavor ?? 'N/A' }}</p> 
-
-                <form method="POST" action="{{ route('cart.add', $product->id) }}">
-                    @csrf
-                    <button class="add-cart" id="add-to-cart-btn" type="submit">Add to Cart</button>
-                </form>
-            </div>
+        @if (!$product)
+        <div class="no-products">
+            No Products Listed Yet.
         </div>
+        @else
+            <div class="product-details">
+                <div class="product-image">
+                    @if($product->imageurl)
+                        <img class="image-details" src="{{ $product->imageurl }}" alt="{{ $product->name }}">
+                    @endif
+                </div>
+                <div class="product-info">
+                    <h2>{{ $product->name }}</h2>
+                    <p>Price: ${{ number_format($product->price, 2) }}</p>
+                    <p>Description: {{ $product->description }}</p>
+                    <p>Net Weight: {{ $product->weight ?? 'N/A' }}</p> 
+                    <p>Flavor: {{ $product->flavor ?? 'N/A' }}</p> 
+    
+                    <form method="POST" action="{{ route('cart.add', $product->id) }}">
+                        @csrf
+                        <button class="add-cart" id="add-to-cart-btn" type="submit">Add to Cart</button>
+                    </form>
+                </div>
+            </div>
+        @endif
     </main>
 
     <footer>

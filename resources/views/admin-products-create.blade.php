@@ -10,6 +10,8 @@
     <nav>
         <a href="{{ route('admin.upload') }}">Bulk Upload</a>
         <a href="{{ route('admin.products') }}">Product Listing</a>
+        <a href="{{ route('admin.orders.all') }}">All Orders</a>
+        <a href="{{ route('home') }}">Home</a>
     </nav>
 
     <h1>{{ isset($product) ? 'Edit Product' : 'Add New Product' }}</h1>

@@ -23,5 +23,18 @@ class OrderController extends Controller
     
         return view('orders', compact('orders'));
     }
+
+    public function adminOrders()
+    {
+        $orders = DB::table('completed_orders')
+            ->orderBy('created_at', 'desc')
+            ->get();
+    
+        foreach ($orders as $order) {
+            $order->items = json_decode($order->items);
+        }
+    
+        return view('admin-orders', compact('orders'));
+    }
     
 }

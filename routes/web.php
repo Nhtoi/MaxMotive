@@ -23,7 +23,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::put('/products/{product}', [AdminProductController::class, 'update'])->name('products.update');
     Route::delete('/products/{product}', [AdminProductController::class, 'destroy'])->name('products.destroy');
     Route::get('/products/{product}/archive', [AdminProductController::class, 'archive'])->name('products.archive');
-    
+    Route::get('/orders', [OrderController::class, 'adminOrders'])->name('orders.all');
     Route::get('/upload', [AdminProductController::class, 'uploadForm'])->name('upload');
     Route::post('/upload', [AdminProductController::class, 'uploadStore'])->name('upload.store');
 

@@ -2,39 +2,36 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Order;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
 {
     public function showUserOrders(Request $request)
     {
-        $cartId = $request->cookie('cart_id'); // Get cart_id from cookie
-    
+        $cartId = $request->cookie('cart_id');
+
         if (!$cartId) {
             return view('orders', ['orders' => collect()]);
         }
-    
-        $orders = DB::table('completed_orders')->where('cart_id', $cartId)->get();
+
+        $orders = Order::getUserOrders($cartId);
 
         foreach ($orders as $order) {
             $order->items = json_decode($order->items);
         }
-    
+
         return view('orders', compact('orders'));
     }
 
     public function adminOrders()
     {
-        $orders = DB::table('completed_orders')
-            ->orderBy('created_at', 'desc')
-            ->get();
-    
+        $orders = Order::getAllOrders();
+
         foreach ($orders as $order) {
             $order->items = json_decode($order->items);
         }
-    
+
         return view('admin-orders', compact('orders'));
     }
-    
 }

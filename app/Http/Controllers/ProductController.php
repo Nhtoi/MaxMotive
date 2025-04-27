@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\userProduct;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class ProductController extends Controller
 {
@@ -11,21 +11,16 @@ class ProductController extends Controller
     {
         $search = $request->input('search');
 
-        if ($search) {
-            $products = DB::select("
-                SELECT * FROM products
-                WHERE name ILIKE ? OR category ILIKE ?
-            ", ["%$search%", "%$search%"]);
-        } else {
-            $products = DB::select("SELECT * FROM products");
-        }
+        $products = $search 
+            ? userProduct::search($search)
+            : userProduct::getAll();
 
         return view('products', compact('products'));
     }
 
     public function show($id)
     {
-        $product = DB::selectOne("SELECT * FROM products WHERE id = ?", [$id]);
+        $product = userProduct::find($id);
 
         if (!$product) {
             abort(404);
@@ -37,12 +32,9 @@ class ProductController extends Controller
     public function search(Request $request)
     {
         $searchTerm = $request->input('search-bar');
-    
-        $products = DB::select(
-            "SELECT * FROM products WHERE name ILIKE :searchTerm",
-            ['searchTerm' => '%' . $searchTerm . '%']
-        );
-    
-        return view('products', ['products' => $products]);
+
+        $products = userProduct::searchByName($searchTerm);
+
+        return view('products', compact('products'));
     }
 }

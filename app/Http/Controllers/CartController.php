@@ -2,142 +2,127 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Cart;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cookie;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 
 class CartController extends Controller
 {
     public function index()
     {
         $cartId = Cookie::get('cart_id');
+
         if (!$cartId) {
             return view('index', ['cartItems' => [], 'totalAmount' => 0]);
         }
-        $cartItems = DB::select("
-            SELECT ci.id, ci.product_id, ci.quantity, p.name, p.price, p.imageurl, p.stock_quantity
-            FROM cart_items ci
-            JOIN products p ON ci.product_id = p.id
-            WHERE ci.cart_id = ?
-        ", [$cartId]);
-        $totalAmount = collect($cartItems)->sum(function ($item) {
-            return $item->price * $item->quantity;
-        });
+
+        $cartItems = Cart::getCartItems($cartId);
+
+        $totalAmount = collect($cartItems)->sum(fn($item) => $item->price * $item->quantity);
+
         return view('index', ['cartItems' => $cartItems, 'totalAmount' => $totalAmount]);
     }
 
     public function addToCart(Request $request, $productId)
     {
         $cartId = Cookie::get('cart_id') ?: Str::random(40);
-        $existingCart = DB::selectOne("SELECT * FROM cart WHERE id = ?", [$cartId]);
-        if (!$existingCart) {
-            DB::insert("INSERT INTO cart (id) VALUES (?)", [$cartId]);
+
+        if (!Cart::findCart($cartId)) {
+            Cart::createCart($cartId);
         }
+
         Cookie::queue('cart_id', $cartId, 60 * 24 * 30); // 30 days
-        $product = DB::selectOne("SELECT * FROM products WHERE id = ?", [$productId]);
+
+        $product = Cart::findProduct($productId);
+
         if (!$product) {
             return redirect()->back()->with('error', 'Product not found.');
         }
-        $cartItem = DB::selectOne("
-            SELECT * FROM cart_items WHERE cart_id = ? AND product_id = ?
-        ", [$cartId, $productId]);
-        if ($cartItem) {    
-            DB::update("
-                UPDATE cart_items SET quantity = quantity + 1 WHERE id = ?
-            ", [$cartItem->id]);
-        } else {   
-            DB::insert("
-                INSERT INTO cart_items (cart_id, product_id, quantity, created_at, updated_at)
-                VALUES (?, ?, 1, NOW(), NOW())
-            ", [$cartId, $productId]);
-        }   
+
+        $cartItem = Cart::findCartItem($cartId, $productId);
+
+        if ($cartItem) {
+            Cart::incrementCartItemQuantity($cartItem->id);
+        } else {
+            Cart::addCartItem($cartId, $productId);
+        }
+
         return redirect()->route('cart.index')->with('success', "{$product->name} has been added to your cart!");
     }
+
     public function update(Request $request, $itemId)
     {
         $request->validate([
             'quantity' => 'required|integer|min:1',
-        ]);  
-        DB::update("
-            UPDATE cart_items SET quantity = ?, updated_at = NOW() WHERE id = ?
-        ", [$request->input('quantity'), $itemId]);  
+        ]);
+
+        Cart::updateCartItemQuantity($itemId, $request->input('quantity'));
+
         return redirect()->route('cart.index')->with('success', 'Cart updated!');
     }
+
     public function removeFromCart($itemId)
     {
-        DB::delete("DELETE FROM cart_items WHERE id = ?", [$itemId]);
+        Cart::deleteCartItem($itemId);
+
         return redirect()->route('cart.index')->with('success', 'Item removed from the cart');
     }
+
     public function checkout(Request $request)
-{
-    $cartId = Cookie::get('cart_id');
-    if (!$cartId) {
-        return redirect()->back()->with('error', 'No cart found.');
-    }
-    $cartItems = DB::select("
-        SELECT ci.product_id, ci.quantity, p.name, p.price, p.stock_quantity
-        FROM cart_items ci
-        JOIN products p ON ci.product_id = p.id
-        WHERE ci.cart_id = ?
-    ", [$cartId]);
-    if (empty($cartItems)) {
-        return redirect()->back()->with('error', 'Your cart is empty.');
-    }
+    {
+        $cartId = Cookie::get('cart_id');
 
-    $totalAmount = collect($cartItems)->sum(function ($item) {
-        return $item->price * $item->quantity;
-    });
+        if (!$cartId) {
+            return redirect()->back()->with('error', 'No cart found.');
+        }
 
-    $itemsArray = array_map(function ($item) {
-        return [
+        $cartItems = Cart::getCartItems($cartId);
+
+        if (empty($cartItems)) {
+            return redirect()->back()->with('error', 'Your cart is empty.');
+        }
+
+        $totalAmount = collect($cartItems)->sum(fn($item) => $item->price * $item->quantity);
+
+        $itemsArray = array_map(fn($item) => [
             'product_id' => $item->product_id,
             'name' => $item->name,
             'quantity' => $item->quantity,
             'price' => $item->price,
-        ];
-    }, $cartItems);
+        ], $cartItems);
 
-    DB::beginTransaction();
+        DB::beginTransaction();
 
-    try {
-        DB::insert("
-            INSERT INTO completed_orders (cart_id, full_name, address, city, items, total, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())
-        ", [
-            $cartId,
-            $request->input('fullname'),
-            $request->input('address'),
-            $request->input('city'),
-            json_encode($itemsArray),
-            $totalAmount
-        ]);
+        try {
+            Cart::completeOrder(
+                $cartId,
+                $request->input('fullname'),
+                $request->input('address'),
+                $request->input('city'),
+                $itemsArray,
+                $totalAmount
+            );
 
-        foreach ($cartItems as $item) {
-            $newStockQuantity = $item->stock_quantity - $item->quantity;
+            foreach ($cartItems as $item) {
+                $newStock = $item->stock_quantity - $item->quantity;
 
-            if ($newStockQuantity < 0) {
-                throw new \Exception("Insufficient stock for product: " . $item->name);
+                if ($newStock < 0) {
+                    throw new \Exception("Insufficient stock for product: " . $item->name);
+                }
+
+                Cart::updateProductStock($item->product_id, $newStock);
             }
 
-            DB::update("
-                UPDATE products
-                SET stock_quantity = ?
-                WHERE id = ?
-            ", [
-                $newStockQuantity,
-                $item->product_id
-            ]);
+            Cart::clearCart($cartId);
+
+            DB::commit();
+
+            return redirect()->route('orders')->with('success', 'Order placed successfully!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Error placing the order: ' . $e->getMessage());
         }
-
-        DB::delete("DELETE FROM cart_items WHERE cart_id = ?", [$cartId]);
-        DB::delete("DELETE FROM cart WHERE id = ?", [$cartId]);
-        DB::commit();
-
-        return redirect()->route('orders')->with('success', 'Order placed successfully!');
-    } catch (\Exception $e) {
-        DB::rollback();
-        return redirect()->back()->with('error', 'Error placing the order: ' . $e->getMessage());
     }
-}
 }

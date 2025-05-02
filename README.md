@@ -13,6 +13,7 @@ Key features include:
 - Clean, responsive storefront.
 - Product management with category and inventory support.
 - PostgreSQL-backed data for performance and reliability.
+- Implements cookies to store guest users and saves their cart.
 - Admin panel for tracking orders and updating items, and bulk uploading.
 
 MaxMotive helps brands scale their supplement business with ease.
